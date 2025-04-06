@@ -19,7 +19,19 @@ SELECT
     channel_id,
     model_name,
     count(1) as request_count,
-    sum(quota) as quota,
+    sum(
+        quota * COALESCE(
+            (
+                SELECT
+                    ratio
+                FROM
+                    user_groups
+                WHERE
+                    user_groups.symbol = logs.token_name
+            ),
+            1
+        )
+    ) as quota,
     sum(prompt_tokens) as prompt_tokens,
     sum(completion_tokens) as completion_tokens,
     sum(request_time) as request_time

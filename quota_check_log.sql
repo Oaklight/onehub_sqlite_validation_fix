@@ -27,12 +27,32 @@ WITH
             printf ("%-8d", l.user_id) AS "UserID",
             printf ("%-12s", u.username) AS "Username",
             printf ("%8d", COUNT(*)) AS "Queries",
-            printf ("%8d", SUM(CASE WHEN l.quota IS NULL THEN 1 ELSE 0 END)) AS "Null",
+            printf (
+                "%8d",
+                SUM(
+                    CASE
+                        WHEN l.quota IS NULL THEN 1
+                        ELSE 0
+                    END
+                )
+            ) AS "Null",
             printf (
                 "%12d",
                 SUM(
                     CEIL(
-                        l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                        (
+                            l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                        ) * COALESCE(
+                            (
+                                SELECT
+                                    ratio
+                                FROM
+                                    user_groups
+                                WHERE
+                                    user_groups.symbol = l.token_name
+                            ),
+                            1
+                        )
                     )
                 )
             ) AS "Calc Quota",

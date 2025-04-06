@@ -16,7 +16,7 @@ WITH
             printf ("%-12s", "Username") AS "Username",
             printf ("%8s", "Queries") AS "Queries",
             printf ("%12s", "Total Quota") AS "Total Quota",
-            printf ("%12s", "Calc Quota") AS "Calc Quota", 
+            printf ("%12s", "Calc Quota") AS "Calc Quota",
             printf ("%12s", "Used Quota") AS "Used Quota",
             printf ("%12s", "Diff") AS "Diff",
             printf ("%10s", "Total $") AS "Total $",
@@ -35,7 +35,19 @@ WITH
                 "%12d",
                 SUM(
                     CEIL(
-                        l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                        (
+                            l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                        ) * COALESCE(
+                            (
+                                SELECT
+                                    ratio
+                                FROM
+                                    user_groups
+                                WHERE
+                                    user_groups.symbol = l.token_name
+                            ),
+                            1
+                        )
                     )
                 )
             ) AS "Calc Quota",

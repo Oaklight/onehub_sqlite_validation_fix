@@ -12,7 +12,19 @@ SET
                 COALESCE(
                     SUM(
                         CEIL(
-                            prompt_tokens * COALESCE(JSON_EXTRACT (metadata, '$.input_ratio'), 1.0) + completion_tokens * COALESCE(JSON_EXTRACT (metadata, '$.output_ratio'), 1.0)
+                            (
+                                prompt_tokens * COALESCE(JSON_EXTRACT (metadata, '$.input_ratio'), 1.0) + completion_tokens * COALESCE(JSON_EXTRACT (metadata, '$.output_ratio'), 1.0)
+                            ) * COALESCE(
+                                (
+                                    SELECT
+                                        ratio
+                                    FROM
+                                        user_groups
+                                    WHERE
+                                        user_groups.symbol = l.token_name
+                                ),
+                                1
+                            )
                         )
                     ),
                     0

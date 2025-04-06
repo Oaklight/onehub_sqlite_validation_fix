@@ -1,8 +1,43 @@
 # OneHub SQLite 数据库消费分析纠错
 
-## 背景
+## 背景与数据库逻辑
+
+### 背景
 
 这些脚本是用来分析 OneHub 的 SQLite 部署版本的消费统计数据。请确保你的 OneHub 数据库已经做过备份，不要直接在不清楚风险的情况下运行下列脚本。
+
+### 数据库逻辑
+
+- **核心表：`logs`**
+
+  - 每个日志条目记录了用户请求的详细信息，包括`quota`、`prompt_tokens`、`completion_tokens`以及`metadata`中的输入输出倍率。
+  - `quota`的计算公式为：
+
+    ```
+    quota = int(math.Ceil((float64(promptTokens) * q.inputRatio) + (float64(completionTokens) * q.outputRatio))) * 分组倍率
+    ```
+
+  - USD 计价最小为 0.000002，不足则取到 0.000002，与`quota`的关系为：
+
+    ```
+    usd = quota * 0.000002
+    ```
+
+  - 此表是所有统计数据的基础，相关脚本包括：
+    - `quota_check_log.sql`：校对`logs`表中的配额数据。
+    - `update_quota_log.sql`：修正`logs`表中的配额数据。
+
+- **派生表：`statistics`**
+
+  - `statistics`表的数据是从`logs`表派生而来，用于汇总用户和渠道的统计信息。
+  - 相关脚本包括：
+    - `rebuild_statistics.sql`：重建`statistics`表的整表数据。
+
+- **用户统计：`users`**
+  - 用户页面的统计数据也是从`logs`表派生而来。
+  - 相关脚本包括：
+    - `quota_check_user.sql`：校对用户配额数据。
+    - `update_quota_user.sql`：修正用户配额数据。
 
 ## 注意事项
 
