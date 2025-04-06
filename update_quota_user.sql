@@ -5,9 +5,26 @@
 -- 则将users表中的quota调整为：quota = quota + (旧 used_quota - new_used)
 -- 同时将used_quota更新为new_used。
 BEGIN TRANSACTION;
+
 UPDATE users
-SET quota = quota + (
-    used_quota - (SELECT COALESCE(SUM(quota), 0) FROM logs WHERE logs.user_id = users.id)
-),
-used_quota = (SELECT COALESCE(SUM(quota), 0) FROM logs WHERE logs.user_id = users.id);
+SET
+    quota = quota + (
+        used_quota - (
+            SELECT
+                COALESCE(SUM(quota), 0)
+            FROM
+                logs
+            WHERE
+                logs.user_id = users.id
+        )
+    ),
+    used_quota = (
+        SELECT
+            COALESCE(SUM(quota), 0)
+        FROM
+            logs
+        WHERE
+            logs.user_id = users.id
+    );
+
 COMMIT;
