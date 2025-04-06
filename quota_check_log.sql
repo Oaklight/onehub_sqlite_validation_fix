@@ -10,41 +10,44 @@ WITH
     header AS (
         SELECT
             0 AS sort_order,
-            printf ("%-10s", "User ID") AS "User ID",
-            printf ("%-15s", "Username") AS "Username",
-            printf ("%15s", "Calculated Quota") AS "Calculated Quota",
-            printf ("%15s", "Log Quota") AS "Log Quota",
-            printf ("%15s", "Difference") AS "Difference",
-            printf ("%12s", "Calc Price (USD)") AS "Calc Price (USD)",
-            printf ("%12s", "Log Price (USD)") AS "Log Price (USD)",
-            printf ("%12s", "Price Diff (USD)") AS "Price Diff (USD)"
+            printf ("%-8s", "UserID") AS "UserID",
+            printf ("%-12s", "Username") AS "Username",
+            printf ("%8s", "Queries") AS "Queries",
+            printf ("%8s", "Null") AS "Null",
+            printf ("%12s", "Calc Quota") AS "Calc Quota",
+            printf ("%12s", "Log Quota") AS "Log Quota",
+            printf ("%12s", "Diff") AS "Diff",
+            printf ("%10s", "Calc $") AS "Calc $",
+            printf ("%10s", "Log $") AS "Log $",
+            printf ("%10s", "Diff $") AS "Diff $"
     ),
     data AS (
         SELECT
             1 AS sort_order,
-            printf ("%-10d", l.user_id) AS "User ID",
-            printf ("%-15s", u.username) AS "Username",
-            /* 采用新公式计算Calculated Quota */
+            printf ("%-8d", l.user_id) AS "UserID",
+            printf ("%-12s", u.username) AS "Username",
+            printf ("%8d", COUNT(*)) AS "Queries",
+            printf ("%8d", SUM(CASE WHEN l.quota IS NULL THEN 1 ELSE 0 END)) AS "Null",
             printf (
-                "%15d",
+                "%12d",
                 SUM(
                     CEIL(
                         l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                     )
                 )
-            ) AS "Calculated Quota",
-            printf ("%15d", SUM(l.quota)) AS "Log Quota",
+            ) AS "Calc Quota",
+            printf ("%12d", SUM(l.quota)) AS "Log Quota",
             printf (
-                "%15d",
+                "%12d",
                 SUM(
                     CEIL(
                         l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                     )
                 ) - SUM(l.quota)
-            ) AS "Difference",
+            ) AS "Diff",
             /* 计算价格采用新计算得到的Calculated Quota */
             printf (
-                "%12.6f",
+                "%10.6f",
                 CEIL(
                     (
                         SUM(
@@ -54,13 +57,13 @@ WITH
                         ) * 0.002 / 1000
                     ) / 0.000002
                 ) * 0.000002
-            ) AS "Calc Price (USD)",
+            ) AS "Calc $",
             printf (
-                "%12.6f",
+                "%10.6f",
                 CEIL((SUM(l.quota) * 0.002 / 1000) / 0.000002) * 0.000002
-            ) AS "Log Price (USD)",
+            ) AS "Log $",
             printf (
-                "%12.6f",
+                "%10.6f",
                 CEIL(
                     (
                         SUM(
@@ -70,7 +73,7 @@ WITH
                         ) * 0.002 / 1000
                     ) / 0.000002
                 ) * 0.000002 - CEIL((SUM(l.quota) * 0.002 / 1000) / 0.000002) * 0.000002
-            ) AS "Price Diff (USD)"
+            ) AS "Diff $"
         FROM
             logs l
             JOIN prices p ON l.model_name = p.model
@@ -80,14 +83,16 @@ WITH
             u.username
     )
 SELECT
-    "User ID",
+    "UserID",
     "Username",
-    "Calculated Quota",
+    "Queries",
+    "Null",
+    "Calc Quota",
     "Log Quota",
-    "Difference",
-    "Calc Price (USD)",
-    "Log Price (USD)",
-    "Price Diff (USD)"
+    "Diff",
+    "Calc $",
+    "Log $",
+    "Diff $"
 FROM
     (
         SELECT
@@ -102,4 +107,4 @@ FROM
     )
 ORDER BY
     sort_order,
-    "User ID" DESC;
+    "UserID" ASC;

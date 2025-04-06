@@ -12,42 +12,49 @@ WITH
     header AS (
         SELECT
             0 AS sort_order,
-            printf ("%-10s", "User ID") AS "User ID",
-            printf ("%-15s", "Username") AS "Username",
-            printf ("%15s", "Calculated Quota") AS "Calculated Quota",
-            printf ("%15s", "User Used Quota") AS "User Used Quota",
-            printf ("%15s", "Difference") AS "Difference",
-            printf ("%12s", "Calc Price (USD)") AS "Calc Price (USD)",
-            printf ("%12s", "User Price (USD)") AS "User Price (USD)",
-            printf ("%12s", "Price Diff (USD)") AS "Price Diff (USD)"
+            printf ("%-8s", "UserID") AS "UserID",
+            printf ("%-12s", "Username") AS "Username",
+            printf ("%8s", "Queries") AS "Queries",
+            printf ("%12s", "Total Quota") AS "Total Quota",
+            printf ("%12s", "Calc Quota") AS "Calc Quota", 
+            printf ("%12s", "Used Quota") AS "Used Quota",
+            printf ("%12s", "Diff") AS "Diff",
+            printf ("%10s", "Total $") AS "Total $",
+            printf ("%10s", "Calc $") AS "Calc $",
+            printf ("%10s", "Used $") AS "Used $",
+            printf ("%10s", "Diff $") AS "Diff $"
     ),
     data AS (
         SELECT
             1 AS sort_order,
-            printf ("%-10d", u.id) AS "User ID",
-            printf ("%-15s", u.username) AS "Username",
-            /* 使用新公式计算Calculated Quota */
+            printf ("%-8d", u.id) AS "UserID",
+            printf ("%-12s", u.username) AS "Username",
+            printf ("%8d", COUNT(*)) AS "Queries",
+            printf ("%12d", u.quota) AS "Total Quota",
             printf (
-                "%15d",
+                "%12d",
                 SUM(
                     CEIL(
                         l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                     )
                 )
-            ) AS "Calculated Quota",
-            printf ("%15d", u.used_quota) AS "User Used Quota",
-            /* 差异 = used_quota - 通过logs计算的quota */
+            ) AS "Calc Quota",
+            printf ("%12d", u.used_quota) AS "Used Quota",
             printf (
-                "%15d",
+                "%12d",
                 u.used_quota - SUM(
                     CEIL(
                         l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                     )
                 )
-            ) AS "Difference",
+            ) AS "Diff",
             /* 计算价格: 先根据通过logs计算的quota计算原始价格，再按最小计量0.000002向上取整 */
             printf (
-                "%12.6f",
+                "%10.6f",
+                CEIL((u.quota * 0.002 / 1000) / 0.000002) * 0.000002
+            ) AS "Total $",
+            printf (
+                "%10.6f",
                 CEIL(
                     (
                         SUM(
@@ -57,13 +64,13 @@ WITH
                         ) * 0.002 / 1000
                     ) / 0.000002
                 ) * 0.000002
-            ) AS "Calc Price (USD)",
+            ) AS "Calc $",
             printf (
-                "%12.6f",
+                "%10.6f",
                 CEIL((u.used_quota * 0.002 / 1000) / 0.000002) * 0.000002
-            ) AS "User Price (USD)",
+            ) AS "Used $",
             printf (
-                "%12.6f",
+                "%10.6f",
                 CEIL((u.used_quota * 0.002 / 1000) / 0.000002) * 0.000002 - CEIL(
                     (
                         SUM(
@@ -73,7 +80,7 @@ WITH
                         ) * 0.002 / 1000
                     ) / 0.000002
                 ) * 0.000002
-            ) AS "Price Diff (USD)"
+            ) AS "Diff $"
         FROM
             logs l
             JOIN prices p ON l.model_name = p.model
@@ -84,14 +91,17 @@ WITH
             u.used_quota
     )
 SELECT
-    "User ID",
+    "UserID",
     "Username",
-    "Calculated Quota",
-    "User Used Quota",
-    "Difference",
-    "Calc Price (USD)",
-    "User Price (USD)",
-    "Price Diff (USD)"
+    "Queries",
+    "Total Quota",
+    "Calc Quota",
+    "Used Quota",
+    "Diff",
+    "Total $",
+    "Calc $",
+    "Used $",
+    "Diff $"
 FROM
     (
         SELECT
@@ -106,4 +116,4 @@ FROM
     )
 ORDER BY
     sort_order,
-    "User ID" DESC;
+    "UserID" ASC;
