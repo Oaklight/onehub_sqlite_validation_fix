@@ -37,6 +37,12 @@
 - **使用方法**：**注意**：此脚本会直接修改`users`表的配额数据，除非完全理解其影响，否则不要使用。
 - **命令**：`sqlite3 test.db < sqls/update_quota_user.sql`
 
+### 5. `rebuild_statistics.sql`
+
+- **用途**：用于重建`statistics`表的整表数据。如果分析页面和用户页面的统计数据对不上，可以运行此脚本。
+- **使用方法**：运行脚本以重新生成统计数据。
+- **命令**：`sqlite3 test.db < sqls/rebuild_statistics.sql`
+
 ## 如何结合 SQLite 使用这些脚本
 
 1. 打开终端并导航到包含`test.db`的项目目录。
