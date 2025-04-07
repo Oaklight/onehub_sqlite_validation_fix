@@ -5,7 +5,14 @@ UPDATE logs
 SET
     quota = CEIL(
         (
-            prompt_tokens * JSON_EXTRACT (metadata, '$.input_ratio') + completion_tokens * JSON_EXTRACT (metadata, '$.output_ratio')
+            (
+                prompt_tokens + (
+                    COALESCE(JSON_EXTRACT (metadata, '$.cached_tokens'), 0) * COALESCE(
+                        JSON_EXTRACT (metadata, '$.cached_tokens_ratio'),
+                        0
+                    )
+                )
+            ) * JSON_EXTRACT (metadata, '$.input_ratio') + completion_tokens * JSON_EXTRACT (metadata, '$.output_ratio')
         ) * COALESCE(
             (
                 SELECT

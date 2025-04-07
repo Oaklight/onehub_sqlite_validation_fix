@@ -13,7 +13,14 @@ SET
                     SUM(
                         CEIL(
                             (
-                                prompt_tokens * COALESCE(JSON_EXTRACT (metadata, '$.input_ratio'), 1.0) + completion_tokens * COALESCE(JSON_EXTRACT (metadata, '$.output_ratio'), 1.0)
+                                (
+                                    prompt_tokens + (
+                                        COALESCE(JSON_EXTRACT (metadata, '$.cached_tokens'), 0) * COALESCE(
+                                            JSON_EXTRACT (metadata, '$.cached_tokens_ratio'),
+                                            0
+                                        )
+                                    )
+                                ) * COALESCE(JSON_EXTRACT (metadata, '$.input_ratio'), 1.0) + completion_tokens * COALESCE(JSON_EXTRACT (metadata, '$.output_ratio'), 1.0)
                             ) * COALESCE(
                                 (
                                     SELECT
@@ -42,7 +49,14 @@ SET
             COALESCE(
                 SUM(
                     CEIL(
-                        prompt_tokens * COALESCE(JSON_EXTRACT (metadata, '$.input_ratio'), 1.0) + completion_tokens * COALESCE(JSON_EXTRACT (metadata, '$.output_ratio'), 1.0)
+                        (
+                            prompt_tokens + (
+                                COALESCE(JSON_EXTRACT (metadata, '$.cached_tokens'), 0) * COALESCE(
+                                    JSON_EXTRACT (metadata, '$.cached_tokens_ratio'),
+                                    0
+                                )
+                            )
+                        ) * COALESCE(JSON_EXTRACT (metadata, '$.input_ratio'), 1.0) + completion_tokens * COALESCE(JSON_EXTRACT (metadata, '$.output_ratio'), 1.0)
                     )
                 ),
                 0

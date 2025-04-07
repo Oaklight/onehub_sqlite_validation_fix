@@ -36,7 +36,14 @@ WITH
                 SUM(
                     CEIL(
                         (
-                            l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                            (
+                                l.prompt_tokens + (
+                                    COALESCE(JSON_EXTRACT (l.metadata, '$.cached_tokens'), 0) * COALESCE(
+                                        JSON_EXTRACT (l.metadata, '$.cached_tokens_ratio'),
+                                        0
+                                    )
+                                )
+                            ) * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                         ) * COALESCE(
                             (
                                 SELECT
@@ -56,7 +63,14 @@ WITH
                 "%12d",
                 u.used_quota - SUM(
                     CEIL(
-                        l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                        (
+                                l.prompt_tokens + (
+                                    COALESCE(JSON_EXTRACT (l.metadata, '$.cached_tokens'), 0) * COALESCE(
+                                        JSON_EXTRACT (l.metadata, '$.cached_tokens_ratio'),
+                                        0
+                                    )
+                                )
+                            ) * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                     )
                 )
             ) AS "Diff",
@@ -71,7 +85,14 @@ WITH
                     (
                         SUM(
                             CEIL(
-                                l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                                (
+                                l.prompt_tokens + (
+                                    COALESCE(JSON_EXTRACT (l.metadata, '$.cached_tokens'), 0) * COALESCE(
+                                        JSON_EXTRACT (l.metadata, '$.cached_tokens_ratio'),
+                                        0
+                                    )
+                                )
+                            ) * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                             )
                         ) * 0.002 / 1000
                     ) / 0.000002
@@ -87,7 +108,14 @@ WITH
                     (
                         SUM(
                             CEIL(
-                                l.prompt_tokens * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
+                                (
+                                l.prompt_tokens + (
+                                    COALESCE(JSON_EXTRACT (l.metadata, '$.cached_tokens'), 0) * COALESCE(
+                                        JSON_EXTRACT (l.metadata, '$.cached_tokens_ratio'),
+                                        0
+                                    )
+                                )
+                            ) * JSON_EXTRACT (l.metadata, '$.input_ratio') + l.completion_tokens * JSON_EXTRACT (l.metadata, '$.output_ratio')
                             )
                         ) * 0.002 / 1000
                     ) / 0.000002
